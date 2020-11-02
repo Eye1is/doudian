@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.text.SimpleDateFormat;
+import java.util.Map;
 import java.util.TreeMap;
 
 /**
@@ -25,8 +26,12 @@ public abstract class AbstractParams extends TreeMap<String, Object> implements 
 
   @Override
   public final String toJson() {
+    Map<String, String> processed = new TreeMap<>();
+    for (Map.Entry<String, Object> entry : entrySet()) {
+      processed.put(entry.getKey(), entry.getValue() + "");
+    }
     try {
-      return objectMapper.writeValueAsString(this);
+      return objectMapper.writeValueAsString(processed);
     } catch (JsonProcessingException e) {
       throw new IllegalStateException("Cannot parse to json", e);
     }
