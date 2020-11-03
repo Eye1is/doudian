@@ -1,8 +1,9 @@
 package me.gaigeshen.doudian.api.authorization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import me.gaigeshen.doudian.api.AppConfig;
-import me.gaigeshen.doudian.api.http.JacksonJsonBeanResponseHandler;
 import me.gaigeshen.doudian.api.http.WebClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
@@ -10,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -23,7 +23,7 @@ public class AccessTokenManager {
 
   private static final Logger logger = LoggerFactory.getLogger(AccessTokenManager.class);
 
-  private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(3);
+  private final ScheduledExecutorService executorService;
 
   private final AccessTokenStore accessTokenStore;
 
@@ -31,41 +31,31 @@ public class AccessTokenManager {
 
   private final WebClient webClient;
 
-  public AccessTokenManager(AccessTokenStore accessTokenStore, AppConfig appConfig, WebClient webClient) {
+  public AccessTokenManager(ScheduledExecutorService executorService, AccessTokenStore accessTokenStore, AppConfig appConfig, WebClient webClient) {
+    this.executorService = executorService;
     this.accessTokenStore = accessTokenStore;
     this.appConfig = appConfig;
     this.webClient = webClient;
   }
 
-  public AccessToken getAccessToken(String shopId) {
-    return accessTokenStore.findByShopId(shopId);
-  }
 
   /**
    * @author gaigeshen
    */
   private class AccessTokenUpdateTask implements Runnable {
 
-    private final AccessToken oldAccessToken; // 当前的访问令牌
+    private final AccessToken currentAccessToken;
 
-    private final long actionTimestamp; // 任务执行时间单位秒
-
-    public AccessTokenUpdateTask(AccessToken oldAccessToken) {
-      this.oldAccessToken = oldAccessToken;
-      this.actionTimestamp = calcDefaultActionTimestamp(oldAccessToken);
+    public AccessTokenUpdateTask(AccessToken currentAccessToken) {
+      this.currentAccessToken = currentAccessToken;
     }
 
-    public AccessTokenUpdateTask(AccessToken oldAccessToken, long actionTimestamp) {
-      this.oldAccessToken = oldAccessToken;
-      this.actionTimestamp = actionTimestamp;
+    public void start(long delaySeconds) {
+      executorService.schedule(this, delaySeconds, TimeUnit.SECONDS);
     }
 
     public void start() {
-      executorService.schedule(this, actionTimestamp, TimeUnit.SECONDS);
-    }
-
-    public void startLater(long seconds) {
-      new AccessTokenUpdateTask(oldAccessToken, System.currentTimeMillis() / 1000 + seconds);
+      start(calcActionDelaySeconds(currentAccessToken));
     }
 
     public void startWithNewAccessToken(AccessToken accessToken) {
@@ -74,65 +64,75 @@ public class AccessTokenManager {
 
     @Override
     public void run() {
-      // 获取并检查新的访问令牌
-      AccessToken accessToken = checkAccessTokenBean(requestNewAccessToken());
-      // 如果该访问令牌不为空且更新访问令牌成功，则以该访问令牌开启新的任务
-      if (Objects.nonNull(accessToken) && updateAccessToken(accessToken)) {
-        startWithNewAccessToken(accessToken);
-      } else {
-        // 没有成功获取到正确的访问令牌，或者更新访问令牌失败，五秒后重试
-        logger.warn("Update access token five seconds later because update failed now");
-        startLater(5);
-      }
-    }
-
-    private long calcDefaultActionTimestamp(AccessToken accessToken) {
-      return (accessToken.getExpiresTimestamp() - 1800) - System.currentTimeMillis() / 1000;
-    }
-
-    private boolean updateAccessToken(AccessToken accessToken) {
+      boolean executeSuccess = false;
       try {
-        accessTokenStore.saveOrUpdate(accessToken);
-        return true;
+        AccessToken accessToken= getAccessTokenFromRemoteServer();
+        executeSuccess = true;
+        updateAccessToken(accessToken);
       } catch (Exception e) {
-        return false;
+        if (!executeSuccess) {
+          logger.warn("Cannot get access token from remote server, try again ten seconds later", e);
+          start(10);
+        }
       }
     }
 
-    private AccessToken checkAccessTokenBean(AccessTokenBean accessTokenBean) {
-      if (Objects.isNull(accessTokenBean)) {
+    private void updateAccessToken(AccessToken newAccessToken) {
+      try {
+        accessTokenStore.saveOrUpdate(newAccessToken);
+      } catch (Exception e) {
+        throw new IllegalStateException("Cannot persist access token to store", e);
+      }
+    }
+
+    private AccessToken getAccessTokenFromRemoteServer() {
+      String uri = getAccessTokenRefreshUri(appConfig.getAppKey(), appConfig.getAppSecret(),
+              currentAccessToken.getRefreshToken());
+
+      String response = webClient.execute(new HttpGet(uri));
+
+
+      try {
+        return parseAccessToken(response);
+      } catch (Exception e) {
         return null;
       }
-      if (Objects.isNull(accessTokenBean.getExpiresIn())) {
-        return null;
+    }
+
+    private AccessToken getAccessTokenFromStore() {
+      return accessTokenStore.findByShopId(currentAccessToken.getShopId());
+    }
+
+    private AccessToken parseAccessToken(String json) throws Exception {
+      ObjectMapper objectMapper = new ObjectMapper();
+      JsonNode jsonNode = objectMapper.readTree(json);
+      if (!jsonNode.isObject()) {
+        throw new IllegalStateException("Cannot parse access token from: " + json);
       }
-      if (StringUtils.isAnyBlank(accessTokenBean.getAccessToken(), accessTokenBean.getRefreshToken(),
-              accessTokenBean.getShopId())) {
-        return null;
+      JsonNode code = jsonNode.get("err_no");
+      if (Objects.isNull(code) || code.asInt() != 0) {
+        JsonNode message = code.get("message");
+        throw new IllegalStateException(Objects.nonNull(message) ? message.asText() : "Cannot parse access token from: " + json);
       }
-      Long expiresIn = accessTokenBean.getExpiresIn();
-      long expiresTimestamp = (System.currentTimeMillis() + expiresIn * 1000) / 1000;
+      AccessTokenBean bean = objectMapper.treeToValue(jsonNode, AccessTokenBean.class);
+      if (Objects.isNull(bean) || Objects.isNull(bean.expiresIn)) {
+        throw new IllegalStateException("Please check response from remote server");
+      }
+      if (StringUtils.isAnyBlank(bean.accessToken, bean.refreshToken, bean.shopId)) {
+        throw new IllegalStateException("Missing access token, refresh token or shop id");
+      }
       return AccessToken.builder()
-              .setAccessToken(accessTokenBean.getAccessToken())
-              .setRefreshToken(accessTokenBean.getRefreshToken())
-              .setScope(accessTokenBean.getScope())
-              .setShopId(accessTokenBean.getShopId())
-              .setShopName(accessTokenBean.getShopName())
-              .setExpiresIn(expiresIn)
-              .setExpiresTimestamp(expiresTimestamp)
+              .setAccessToken(bean.accessToken)
+              .setRefreshToken(bean.refreshToken)
+              .setScope(bean.scope)
+              .setShopId(bean.shopId)
+              .setShopName(bean.shopName)
+              .setExpiresIn(bean.expiresIn)
               .build();
     }
 
-    private AccessTokenBean requestNewAccessToken() {
-      HttpGet get = new HttpGet(getAccessTokenRefreshUri(appConfig.getAppKey(), appConfig.getAppSecret(),
-              oldAccessToken.getRefreshToken()));
-      AccessTokenBean accessTokenBean = null;
-      try {
-        accessTokenBean = webClient.execute(get, new JacksonJsonBeanResponseHandler<>(AccessTokenBean.class));
-      } catch (Exception e) {
-        logger.warn("Could not request new access token", e);
-      }
-      return accessTokenBean;
+    private long calcActionDelaySeconds(AccessToken accessToken) {
+      return (accessToken.getExpiresTimestamp() - 1800) - System.currentTimeMillis() / 1000;
     }
   }
 
@@ -158,30 +158,6 @@ public class AccessTokenManager {
 
     @JsonProperty("expires_in")
     private Long expiresIn;
-
-    public String getAccessToken() { return accessToken; }
-
-    public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
-
-    public String getRefreshToken() { return refreshToken; }
-
-    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
-
-    public String getScope() { return scope; }
-
-    public void setScope(String scope) { this.scope = scope; }
-
-    public String getShopId() { return shopId; }
-
-    public void setShopId(String shopId) { this.shopId = shopId; }
-
-    public String getShopName() { return shopName; }
-
-    public void setShopName(String shopName) { this.shopName = shopName; }
-
-    public Long getExpiresIn() { return expiresIn; }
-
-    public void setExpiresIn(Long expiresIn) { this.expiresIn = expiresIn; }
   }
 
 }
