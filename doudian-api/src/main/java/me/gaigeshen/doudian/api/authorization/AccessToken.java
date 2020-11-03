@@ -1,5 +1,8 @@
 package me.gaigeshen.doudian.api.authorization;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
 /**
  * @author gaigeshen
  */
@@ -116,6 +119,9 @@ public class AccessToken {
     }
 
     public AccessToken build() {
+      Validate.isTrue(StringUtils.isNotBlank(accessToken), "accessToken");
+      Validate.isTrue(StringUtils.isNotBlank(refreshToken), "refreshToken");
+      Validate.isTrue(StringUtils.isNotBlank(shopId), "shopId");
       return new AccessToken(this);
     }
   }
