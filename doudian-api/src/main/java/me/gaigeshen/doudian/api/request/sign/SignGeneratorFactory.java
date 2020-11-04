@@ -1,4 +1,4 @@
-package me.gaigeshen.doudian.api.sign;
+package me.gaigeshen.doudian.api.request.sign;
 
 import java.util.Objects;
 

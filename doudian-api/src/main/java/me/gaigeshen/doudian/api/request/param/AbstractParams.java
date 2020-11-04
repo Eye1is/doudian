@@ -1,9 +1,9 @@
-package me.gaigeshen.doudian.api.param;
+package me.gaigeshen.doudian.api.request.param;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.gaigeshen.doudian.api.util.JsonUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Map;
@@ -25,16 +25,12 @@ public abstract class AbstractParams extends TreeMap<String, Object> implements 
   }
 
   @Override
-  public final String toJson() {
-    Map<String, String> processed = new TreeMap<>();
+  public final String toJsonString() {
+    Map<String, String> stringValueMappings = new TreeMap<>();
     for (Map.Entry<String, Object> entry : entrySet()) {
-      processed.put(entry.getKey(), entry.getValue() + "");
+      stringValueMappings.put(entry.getKey(), entry.getValue() + "");
     }
-    try {
-      return objectMapper.writeValueAsString(processed);
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException("Cannot parse to json", e);
-    }
+    return JsonUtils.toJson(stringValueMappings, objectMapper);
   }
 
 }

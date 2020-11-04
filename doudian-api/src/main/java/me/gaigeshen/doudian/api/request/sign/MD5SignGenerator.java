@@ -1,4 +1,4 @@
-package me.gaigeshen.doudian.api.sign;
+package me.gaigeshen.doudian.api.request.sign;
 
 import org.apache.commons.codec.digest.DigestUtils;
 

@@ -32,16 +32,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class WebClient implements Closeable {
 
-  public static final WebClient DEFAULT_WEB_CLIENT = WebClient.builder().build();
-
   private final CloseableHttpClient client;
 
   public static Builder builder() {
     return Builder.create();
-  }
-
-  public static WebClient getDefaultWebClient() {
-    return DEFAULT_WEB_CLIENT;
   }
 
   private WebClient(int connectionRequestTimeout, int connectTimeout, int socketTimeout, SSLContext sslContext) {

@@ -1,4 +1,4 @@
-package me.gaigeshen.doudian.api.sign;
+package me.gaigeshen.doudian.api.request.sign;
 
 import java.util.Map;
 import java.util.StringJoiner;
@@ -12,11 +12,11 @@ public abstract class AbstractSignGenerator implements SignGenerator {
   @Override
   public final String generate(SignParams signParams) {
     Map<String, Object> allParams = new TreeMap<>();
-    allParams.put("param_json", signParams.getParams().toJson());
     allParams.put("app_key", signParams.getAppKey());
-    allParams.put("method", signParams.getMethod());
     allParams.put("timestamp", signParams.getTimestamp());
     allParams.put("v", signParams.getVersion());
+    allParams.put("method", signParams.getParams().getMethod());
+    allParams.put("param_json", signParams.getParams().toJsonString());
 
     StringBuilder builder = new StringBuilder();
     for (Map.Entry<String, Object> entry : allParams.entrySet()) {

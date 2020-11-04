@@ -3,6 +3,8 @@ package me.gaigeshen.doudian.api.authorization;
 import java.util.List;
 
 /**
+ * 访问令牌存储器
+ *
  * @author gaigeshen
  */
 public interface AccessTokenStore {

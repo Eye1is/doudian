@@ -5,7 +5,7 @@ package me.gaigeshen.doudian.api;
  *
  * @author gaigeshen
  */
-public class UriConstants {
+public class Constants {
 
   /** 接口请求地址 */
   public static final String API_URI = "https://openapi-fxg.jinritemai.com";
@@ -19,7 +19,7 @@ public class UriConstants {
   /** 刷新访问令牌地址 */
   public static final String ACCESS_TOKEN_REFRESH_TEMPLATE_URI = "https://openapi-fxg.jinritemai.com/oauth2/refresh_token?app_id=%s&app_secret=%s&grant_type=refresh_token&refresh_token=%s";
 
-  private UriConstants() { }
+  private Constants() { }
 
   private static String getUri(String templateUri, Object... values) {
     return String.format(templateUri, values);

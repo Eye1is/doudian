@@ -4,6 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 /**
+ * 访问令牌
+ *
  * @author gaigeshen
  */
 public class AccessToken {
