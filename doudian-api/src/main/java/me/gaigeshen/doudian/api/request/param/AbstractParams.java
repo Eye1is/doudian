@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import me.gaigeshen.doudian.api.util.JsonUtils;
 
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -14,7 +15,7 @@ import java.util.TreeMap;
 /**
  * @author gaigeshen
  */
-public abstract class AbstractParams extends TreeMap<String, Object> implements Params {
+public abstract class AbstractParams extends HashMap<String, Object> implements Params {
 
   private final static ObjectMapper objectMapper = new ObjectMapper();
 
