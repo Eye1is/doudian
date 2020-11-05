@@ -1,37 +1,58 @@
 package me.gaigeshen.doudian.api.authorization;
 
-import java.io.Closeable;
+import java.util.List;
 
 /**
- * 访问令牌管理器
+ * 访问令牌管理器，内部需要访问令牌存储器用于访问令牌的存储和获取，同时此访问令牌管理器维护所有访问令牌的更新
  *
  * @author gaigeshen
  */
-public interface AccessTokenManager extends Closeable {
+public interface AccessTokenManager {
   /**
-   * 初始化
+   * 返回内部使用的访问令牌存储器
+   *
+   * @return 访问令牌存储器
    */
-  void init();
+  AccessTokenStore getAccessTokenStore();
 
   /**
-   * 保存访问令牌，店铺授权之后得到访问令牌调用此方法，将该访问令牌保存
+   * 保存访问令牌，保存旧店铺的访问令牌也可以调用此方法
    *
    * @param accessToken 访问令牌
+   * @return 该访问令牌
    */
-  void persistAccessToken(AccessToken accessToken);
+  AccessToken saveAccessToken(AccessToken accessToken);
 
   /**
-   * 删除访问令牌，后续会停止该店铺对应的访问令牌的更新
+   * 查询访问令牌
+   *
+   * @param shopId 店铺编号
+   * @return 该店铺的访问令牌
+   */
+  AccessToken findAccessToken(String shopId);
+
+  /**
+   * 查询所有的访问令牌
+   *
+   * @return 所有的访问令牌
+   */
+  List<AccessToken> findAccessTokens();
+
+  /**
+   * 删除访问令牌
    *
    * @param shopId 店铺编号
    */
   void deleteAccessToken(String shopId);
 
   /**
-   * 获取当前的访问令牌
-   *
-   * @param shopId 店铺编号
-   * @return 当前的访问令牌
+   * 启动此访问令牌管理器
    */
-  AccessToken getAccessToken(String shopId);
+  void startup();
+
+  /**
+   * 关闭此访问令牌管理器
+   */
+  void shutdown();
+
 }

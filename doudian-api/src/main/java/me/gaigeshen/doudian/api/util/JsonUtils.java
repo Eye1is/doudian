@@ -8,9 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author gaigeshen
@@ -36,6 +34,46 @@ public class JsonUtils {
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException("Cannot to json from: " + object);
     }
+  }
+
+  public static Map<String, Object> parseMapping(String json) {
+    return parseMapping(parseJsonNode(json));
+  }
+
+  public static Map<String, Object> parseMapping(JsonNode jsonNode) {
+    if (!jsonNode.isObject()) {
+      throw new IllegalArgumentException("Can only support json object, but json input: " + jsonNode);
+    }
+    Map<String, Object> result = new HashMap<>();
+    Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
+    while (fields.hasNext()) {
+      Map.Entry<String, JsonNode> field = fields.next();
+      JsonNode value = field.getValue();
+      if (value.isArray()) {
+        for (JsonNode internalJsonNode : value) {
+          result.put(field.getKey(), parseMapping(internalJsonNode));
+        }
+        continue;
+      }
+      if (value.isValueNode()) {
+        if (value.isBoolean()) {
+          result.put(field.getKey(), value.booleanValue());
+        } else if (value.isTextual()) {
+          result.put(field.getKey(), value.textValue());
+        } else if (value.isFloat()) {
+          result.put(field.getKey(), value.floatValue());
+        } else if (value.isDouble()) {
+          result.put(field.getKey(), value.doubleValue());
+        } else if (value.isInt()) {
+          result.put(field.getKey(), value.intValue());
+        } else if (value.isLong()) {
+          result.put(field.getKey(), value.longValue());
+        } else if (value.isNull()) {
+          result.put(field.getKey(), null);
+        }
+      }
+    }
+    return result;
   }
 
   public static JsonNode parseJsonNode(String json) {

@@ -1,6 +1,7 @@
 package me.gaigeshen.doudian.api.request;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 表达的是响应结果
@@ -22,6 +23,13 @@ public interface Response {
    * 如果为业务失败的响应，可能会有失败的消息内容
    */
   String getMessage();
+
+  /**
+   * 将响应的数据转换为映射对象
+   *
+   * @return 映射对象
+   */
+  Map<String, Object> parseMapping();
 
   /**
    * 将响应的数据转换为指定类型的对象

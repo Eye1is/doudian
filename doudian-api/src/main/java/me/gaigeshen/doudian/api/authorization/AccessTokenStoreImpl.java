@@ -11,15 +11,16 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author gaigeshen
  */
-public class InMemoryAccessTokenStore implements AccessTokenStore {
+public class AccessTokenStoreImpl implements AccessTokenStore {
 
   private final Map<String, AccessToken> internalStore = new ConcurrentHashMap<>();
 
   @Override
-  public void saveOrUpdate(AccessToken accessToken) {
-    if (Objects.nonNull(accessToken)) {
-      internalStore.put(accessToken.getShopId(), accessToken);
+  public boolean saveOrUpdate(AccessToken accessToken) {
+    if (Objects.isNull(accessToken)) {
+      throw new IllegalArgumentException("Access token cannot be null");
     }
+    return Objects.isNull(internalStore.put(accessToken.getShopId(), accessToken));
   }
 
   @Override

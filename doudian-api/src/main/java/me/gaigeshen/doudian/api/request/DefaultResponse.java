@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import me.gaigeshen.doudian.api.util.JsonUtils;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 默认的响应结果
@@ -62,6 +63,11 @@ public class DefaultResponse implements Response {
   @Override
   public String getMessage() {
     return message;
+  }
+
+  @Override
+  public Map<String, Object> parseMapping() {
+    return JsonUtils.parseMapping(dataJsonNode);
   }
 
   @Override

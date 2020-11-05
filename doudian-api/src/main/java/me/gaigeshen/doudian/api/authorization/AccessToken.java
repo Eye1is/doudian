@@ -3,6 +3,9 @@ package me.gaigeshen.doudian.api.authorization;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
+import java.util.Date;
+import java.util.Objects;
+
 /**
  * 访问令牌
  *
@@ -22,7 +25,9 @@ public class AccessToken {
 
   private final long expiresIn;
 
-  private final long expiresTimestamp;
+  private final long expiresTimestamp; // 过期时间点单位秒
+
+  private final Date updateTime; // 更新时间
 
   private AccessToken(Builder builder) {
     this.accessToken = builder.accessToken;
@@ -32,6 +37,7 @@ public class AccessToken {
     this.shopName = builder.shopName;
     this.expiresIn = builder.expiresIn;
     this.expiresTimestamp = builder.expiresTimestamp;
+    this.updateTime = builder.updateTime;
   }
 
   public static Builder builder() {
@@ -66,6 +72,10 @@ public class AccessToken {
     return expiresTimestamp;
   }
 
+  public Date getUpdateTime() {
+    return updateTime;
+  }
+
   /**
    * @author gaigeshen
    */
@@ -84,6 +94,8 @@ public class AccessToken {
     private long expiresIn;
 
     private long expiresTimestamp;
+
+    private Date updateTime;
 
     public Builder setAccessToken(String accessToken) {
       this.accessToken = accessToken;
@@ -120,10 +132,16 @@ public class AccessToken {
       return this;
     }
 
+    public Builder setUpdateTime(Date updateTime) {
+      this.updateTime = updateTime;
+      return this;
+    }
+
     public AccessToken build() {
       Validate.isTrue(StringUtils.isNotBlank(accessToken), "accessToken");
       Validate.isTrue(StringUtils.isNotBlank(refreshToken), "refreshToken");
       Validate.isTrue(StringUtils.isNotBlank(shopId), "shopId");
+      Validate.isTrue(Objects.nonNull(updateTime), "updateTime");
       return new AccessToken(this);
     }
   }
