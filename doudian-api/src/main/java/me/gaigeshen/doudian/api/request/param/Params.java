@@ -1,13 +1,11 @@
 package me.gaigeshen.doudian.api.request.param;
 
-import java.util.Map;
-
 /**
  * 业务参数，表达的是某个业务需要的所有参数和参数值
  *
  * @author gaigeshen
  */
-public interface Params extends Map<String, Object> {
+public interface Params {
   /**
    * 该业务参数对应的接口名称
    */

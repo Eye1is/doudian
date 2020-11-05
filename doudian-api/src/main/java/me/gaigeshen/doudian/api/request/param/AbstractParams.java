@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.SerializableString;
 import com.fasterxml.jackson.core.io.CharacterEscapes;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import me.gaigeshen.doudian.api.util.JsonUtils;
 
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -15,23 +15,25 @@ import java.util.TreeMap;
 /**
  * @author gaigeshen
  */
-public abstract class AbstractParams extends HashMap<String, Object> implements Params {
+public abstract class AbstractParams implements Params {
 
   private final static ObjectMapper objectMapper = new ObjectMapper();
 
   static {
     objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
-    // 只允许包含非空的字段
     objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    // 转义指定的字符
+    objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
     objectMapper.getFactory().setCharacterEscapes(new SpecialCharacterEscapes());
   }
 
   @Override
   public final String toJsonString() {
+    // 先按照预设的规则序列化
+    String json = JsonUtils.toJson(this, objectMapper);
+    // 循环所有的属性并将属性值转为字符串
     Map<String, String> stringValueMappings = new TreeMap<>();
-    for (Map.Entry<String, Object> entry : entrySet()) {
-      if (Objects.nonNull(entry.getValue())) {
+    for (Map.Entry<String, Object> entry : JsonUtils.parseMapping(json).entrySet()) {
+      if (!entry.getKey().equals("method") && Objects.nonNull(entry.getValue())) {
         stringValueMappings.put(entry.getKey(), entry.getValue() + "");
       }
     }
