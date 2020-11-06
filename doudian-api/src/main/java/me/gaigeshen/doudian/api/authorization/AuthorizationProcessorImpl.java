@@ -52,6 +52,12 @@ public class AuthorizationProcessorImpl implements AuthorizationProcessor {
   }
 
   @Override
+  public AccessToken handleAuthorized(String authorizationCode, String state) {
+    // 暂时先不管第二个参数
+    return handleAuthorized(authorizationCode);
+  }
+
+  @Override
   public AccessToken handleAuthorized(String authorizationCode) {
     AccessToken accessToken;
     try {
