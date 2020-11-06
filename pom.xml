@@ -9,6 +9,8 @@
     <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>doudian-api</module>
+        <module>doudian-spring-boot-starter</module>
+        <module>doudian-spring-boot-autoconfigure</module>
     </modules>
     <packaging>pom</packaging>
 

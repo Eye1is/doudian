@@ -227,7 +227,7 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
    */
   private class AccessTokenStoreCacheWrapper implements AccessTokenStore {
 
-    private final AccessTokenStore internalStore = new AccessTokenStoreImpl();
+    private final AccessTokenStore internalStore = AccessTokenStoreImpl.create();
 
     private final AccessTokenStore originStore;
 

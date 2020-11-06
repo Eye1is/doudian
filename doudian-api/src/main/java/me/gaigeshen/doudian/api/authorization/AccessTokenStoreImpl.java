@@ -15,6 +15,12 @@ public class AccessTokenStoreImpl implements AccessTokenStore {
 
   private final Map<String, AccessToken> internalStore = new ConcurrentHashMap<>();
 
+  private AccessTokenStoreImpl() { }
+
+  public static AccessTokenStoreImpl create() {
+    return new AccessTokenStoreImpl();
+  }
+
   @Override
   public boolean saveOrUpdate(AccessToken accessToken) {
     if (Objects.isNull(accessToken)) {
