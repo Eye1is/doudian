@@ -147,7 +147,7 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
     String shopName = MapUtils.getString(accessTokenData, "shop_name");
     Long expiresIn = MapUtils.getLong(accessTokenData, "expires_in");
     if (StringUtils.isAnyBlank(accessToken, refreshToken, shopId) || Objects.isNull(expiresIn)) {
-      throw new IllegalStateException("Could not get invalid remote access token:: shop " + currentAccessToken.getShopName());
+      throw new IllegalStateException("Could not get valid remote access token:: shop " + currentAccessToken.getShopName());
     }
     return AccessToken.builder()
             .setAccessToken(accessToken).setRefreshToken(newRefreshToken)

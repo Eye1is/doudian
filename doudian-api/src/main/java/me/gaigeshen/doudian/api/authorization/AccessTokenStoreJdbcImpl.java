@@ -151,7 +151,7 @@ public class AccessTokenStoreJdbcImpl implements AccessTokenStore {
     Connection connection = null;
     try {
       connection = dataSource.getConnection();
-      connection.setAutoCommit(true);
+      connection.setAutoCommit(false);
       return connection;
     } catch (SQLException e) {
       DbUtils.closeQuietly(connection);
