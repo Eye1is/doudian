@@ -65,6 +65,7 @@ public class AccessTokenStoreJdbcImpl implements AccessTokenStore {
       // 先执行更新操作，如果更新成功则说明该店铺已经存在访问令牌
       int result = queryRunner.update(connection, UPDATE_SQL, accessToken.getAccessToken(), accessToken.getRefreshToken(), accessToken.getScope(), accessToken.getShopName(), accessToken.getExpiresIn(), accessToken.getExpiresTimestamp(), new Date(), accessToken.getShopId());
       if (result > 0) {
+        connection.commit();
         return false;
       }
       // 为新店铺增加访问令牌
