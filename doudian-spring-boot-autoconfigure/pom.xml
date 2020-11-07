@@ -16,7 +16,7 @@
         <dependency>
             <groupId>me.gaigeshen.doudian</groupId>
             <artifactId>doudian-api</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
 

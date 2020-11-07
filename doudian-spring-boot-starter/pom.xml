@@ -16,12 +16,12 @@
         <dependency>
             <groupId>me.gaigeshen.doudian</groupId>
             <artifactId>doudian-api</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>me.gaigeshen.doudian</groupId>
             <artifactId>doudian-spring-boot-autoconfigure</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

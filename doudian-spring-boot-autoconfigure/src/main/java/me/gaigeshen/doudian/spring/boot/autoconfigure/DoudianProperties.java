@@ -11,7 +11,7 @@ public class DoudianProperties {
   private String appKey;
   /** The application secret */
   private String appSecret;
-
+  /** The authorization config */
   private Authorize authorize = new Authorize();
 
   public String getAppKey() {
