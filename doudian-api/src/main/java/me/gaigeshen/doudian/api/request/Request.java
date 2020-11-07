@@ -9,12 +9,16 @@ import me.gaigeshen.doudian.api.request.param.Params;
  */
 public interface Request {
   /**
-   * 请求链接
+   * 返回请求链接
+   *
+   * @return 请求链接
    */
   String getUri();
 
   /**
-   * 请求中的业务参数数据
+   * 返回请求中的业务参数数据
+   *
+   * @return 请求中的业务参数数据
    */
   Params getParams();
 }

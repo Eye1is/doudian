@@ -8,11 +8,15 @@ package me.gaigeshen.doudian.api.request.param;
 public interface Params {
   /**
    * 该业务参数对应的接口名称
+   *
+   * @return 接口名称
    */
   String getMethod();
 
   /**
    * 将此业务参数转成字符串
+   *
+   * @return 转换的字符串
    */
   String toJsonString();
 

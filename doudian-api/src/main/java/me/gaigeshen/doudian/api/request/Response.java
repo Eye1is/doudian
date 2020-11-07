@@ -11,16 +11,22 @@ import java.util.Map;
 public interface Response {
   /**
    * 返回原始的响应字符串内容
+   *
+   * @return 原始的响应字符串内容
    */
   String getRawString();
 
   /**
-   * 是否是成功的响应，此处的成功表达的是业务方面的成功与否
+   * 返回是否是成功的响应，此处的成功表达的是业务方面的成功与否
+   *
+   * @return 是否是成功的响应
    */
   boolean isSuccess();
 
   /**
    * 如果为业务失败的响应，可能会有失败的消息内容
+   *
+   * @return 消息内容
    */
   String getMessage();
 
