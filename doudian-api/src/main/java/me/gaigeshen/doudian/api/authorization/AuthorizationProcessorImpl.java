@@ -9,6 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.client.methods.HttpGet;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +36,11 @@ public class AuthorizationProcessorImpl implements AuthorizationProcessor {
     Validate.isTrue(StringUtils.isNotBlank(redirectUri), "redirectUri cannot be blank");
     this.appConfig = appConfig;
     this.accessTokenManager = accessTokenManager;
-    this.redirectUri = redirectUri;
+    try {
+      this.redirectUri = URLEncoder.encode(redirectUri, "utf-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new IllegalStateException("Could not encode uri " + redirectUri, e);
+    }
   }
 
   public static AuthorizationProcessorImpl create(AppConfig appConfig, AccessTokenManager accessTokenManager, String redirectUri) {
