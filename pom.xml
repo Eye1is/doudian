@@ -81,6 +81,7 @@
                 <version>1.15.0</version>
                 <configuration>
                     <gitFlowConfig>
+                        <productionBranch>main</productionBranch>
                         <versionTagPrefix>v</versionTagPrefix>
                     </gitFlowConfig>
                     <versionDigitToIncrement>1</versionDigitToIncrement>
