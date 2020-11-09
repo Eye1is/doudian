@@ -7,6 +7,8 @@ import org.apache.commons.lang3.Validate;
 import java.util.Objects;
 
 /**
+ * 用于签名的参数
+ *
  * @author gaigeshen
  */
 public class SignParams {
@@ -54,6 +56,8 @@ public class SignParams {
   }
 
   /**
+   * 签名的参数构建器
+   *
    * @author gaigeshen
    */
   public static class Builder {

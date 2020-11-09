@@ -76,7 +76,7 @@ public class WebClient implements Closeable {
     try {
       return client.execute(req, handler);
     } catch (IOException e) {
-      throw new IllegalStateException(e);
+      throw new IllegalStateException("Could not execute request:: " + req, e);
     }
   }
 

@@ -16,8 +16,8 @@ import java.util.Objects;
 /**
  * @author gaigeshen
  */
-@AutoConfigureAfter({ DataSourceAutoConfiguration.class })
-@ConditionalOnClass({ AccessToken.class })
+@AutoConfigureAfter({ DataSourceAutoConfiguration.class }) // Maybe use jdbc data source
+@ConditionalOnClass({ AccessToken.class }) // Include doudian lib ?
 @EnableConfigurationProperties(DoudianProperties.class)
 @Configuration
 public class DoudianAutoConfiguration {

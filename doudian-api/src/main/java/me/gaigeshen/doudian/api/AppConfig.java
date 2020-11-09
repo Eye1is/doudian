@@ -4,6 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 /**
+ * 应用配置
+ *
  * @author gaigeshen
  */
 public class AppConfig {

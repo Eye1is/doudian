@@ -9,6 +9,8 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * 访问令牌存储器默认的实现，采用简单的哈希存储
+ *
  * @author gaigeshen
  */
 public class AccessTokenStoreImpl implements AccessTokenStore {

@@ -13,6 +13,8 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 /**
+ * 抽象的业务参数，具体的业务参数类需要继承此类，并且使用对应的字段来表达所有的业务参数
+ *
  * @author gaigeshen
  */
 public abstract class AbstractParams implements Params {

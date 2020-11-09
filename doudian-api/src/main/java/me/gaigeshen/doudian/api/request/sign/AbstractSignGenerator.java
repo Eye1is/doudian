@@ -5,6 +5,8 @@ import java.util.StringJoiner;
 import java.util.TreeMap;
 
 /**
+ * 抽象的签名生成器
+ *
  * @author gaigeshen
  */
 public abstract class AbstractSignGenerator implements SignGenerator {
@@ -30,5 +32,11 @@ public abstract class AbstractSignGenerator implements SignGenerator {
     return calculate(sj.toString());
   }
 
+  /**
+   * 此方法用于计算签名，即具体的签名计算方法的实现
+   *
+   * @param algorithmInputValue 输入的待计算签名的内容
+   * @return 签名
+   */
   protected abstract String calculate(String algorithmInputValue);
 }

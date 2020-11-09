@@ -3,6 +3,8 @@ package me.gaigeshen.doudian.api.request.sign;
 import java.util.Objects;
 
 /**
+ * 用于签名生成器的获取
+ *
  * @author gaigeshen
  */
 public class SignGeneratorFactory {
@@ -11,6 +13,12 @@ public class SignGeneratorFactory {
 
   private SignGeneratorFactory() {}
 
+  /**
+   * 获取签名生成器
+   *
+   * @param signMethod 签名方式
+   * @return 签名生成器
+   */
   public static SignGenerator getGenerator(SignMethod signMethod) {
     if (Objects.nonNull(signMethod)) {
       if (SignMethod.MD5 == signMethod) {

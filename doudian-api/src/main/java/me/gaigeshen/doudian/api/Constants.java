@@ -1,7 +1,7 @@
 package me.gaigeshen.doudian.api;
 
 /**
- * 模板链接地址常量
+ * 常量
  *
  * @author gaigeshen
  */
