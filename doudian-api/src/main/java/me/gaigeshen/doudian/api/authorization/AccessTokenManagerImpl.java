@@ -2,7 +2,9 @@ package me.gaigeshen.doudian.api.authorization;
 
 import me.gaigeshen.doudian.api.AppConfig;
 import me.gaigeshen.doudian.api.http.WebClient;
+import me.gaigeshen.doudian.api.http.WebClientException;
 import me.gaigeshen.doudian.api.request.DefaultResponse;
+import me.gaigeshen.doudian.api.request.ResponseParseException;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -129,8 +131,10 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
    *
    * @param currentAccessToken 当前的访问令牌
    * @return 获取到的访问令牌
+   * @throws WebClientException 请求远程数据失败
+   * @throws ResponseParseException 转换请求结果失败
    */
-  private AccessToken getRemoteAccessToken(AccessToken currentAccessToken) throws Exception {
+  private AccessToken getRemoteAccessToken(AccessToken currentAccessToken) throws WebClientException, ResponseParseException {
     String refreshToken = currentAccessToken.getRefreshToken();
     HttpGet req = new HttpGet(getAccessTokenRefreshUri(appConfig.getAppKey(), appConfig.getAppSecret(), refreshToken));
     String rawString = webClient.execute(req);
@@ -139,12 +143,7 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
       throw new IllegalStateException("Could not get remote access token, " + response.getMessage() + ":: shop "
               + currentAccessToken.getShopName());
     }
-    Map<String, Object> accessTokenData = null;
-    try {
-      accessTokenData = response.parseMapping();
-    } catch (me.gaigeshen.doudian.api.request.exception.ResponseParseException e) {
-      e.printStackTrace();
-    }
+    Map<String, Object> accessTokenData = response.parseMapping();
     String accessToken = MapUtils.getString(accessTokenData, "access_token");
     String newRefreshToken = MapUtils.getString(accessTokenData, "refresh_token");
     String scope = MapUtils.getString(accessTokenData, "scope");

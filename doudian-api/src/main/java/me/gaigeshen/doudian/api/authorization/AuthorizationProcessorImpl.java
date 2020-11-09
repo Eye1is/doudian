@@ -3,7 +3,9 @@ package me.gaigeshen.doudian.api.authorization;
 import me.gaigeshen.doudian.api.AppConfig;
 import me.gaigeshen.doudian.api.Constants;
 import me.gaigeshen.doudian.api.http.WebClient;
+import me.gaigeshen.doudian.api.http.WebClientException;
 import me.gaigeshen.doudian.api.request.DefaultResponse;
+import me.gaigeshen.doudian.api.request.ResponseParseException;
 import me.gaigeshen.doudian.api.util.URLCodecUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -74,8 +76,10 @@ public class AuthorizationProcessorImpl implements AuthorizationProcessor {
    *
    * @param authorizationCode 授权码
    * @return 获取远程的访问令牌
+   * @throws WebClientException 请求远程数据失败
+   * @throws ResponseParseException 转换请求结果失败
    */
-  private AccessToken getRemoteAccessToken(String authorizationCode) throws Exception {
+  private AccessToken getRemoteAccessToken(String authorizationCode) throws WebClientException, ResponseParseException {
     HttpGet req = new HttpGet(getAccessTokenUri(appConfig.getAppKey(), appConfig.getAppSecret(), authorizationCode));
     String rawString = webClient.execute(req);
     DefaultResponse response = DefaultResponse.create(rawString);
@@ -83,12 +87,7 @@ public class AuthorizationProcessorImpl implements AuthorizationProcessor {
       throw new IllegalStateException("Could not get remote access token, " + response.getMessage() + ":: authorization code "
               + authorizationCode);
     }
-    Map<String, Object> accessTokenData = null;
-    try {
-      accessTokenData = response.parseMapping();
-    } catch (me.gaigeshen.doudian.api.request.exception.ResponseParseException e) {
-      e.printStackTrace();
-    }
+    Map<String, Object> accessTokenData = response.parseMapping();
     String accessToken = MapUtils.getString(accessTokenData, "access_token");
     String refreshToken = MapUtils.getString(accessTokenData, "refresh_token");
     String scope = MapUtils.getString(accessTokenData, "scope");

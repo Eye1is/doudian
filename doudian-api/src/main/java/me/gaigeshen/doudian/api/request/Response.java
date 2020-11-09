@@ -1,11 +1,9 @@
 package me.gaigeshen.doudian.api.request;
 
-import me.gaigeshen.doudian.api.request.exception.ResponseParseException;
-
 import java.util.Map;
 
 /**
- * 表达的是响应结果
+ * 表达的是请求响应结果
  *
  * @author gaigeshen
  */

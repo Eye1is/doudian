@@ -3,8 +3,6 @@ package me.gaigeshen.doudian.api.request.sign;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
-import java.util.Objects;
-
 /**
  * 用于签名的参数
  *
@@ -20,6 +18,8 @@ public class SignParams {
 
   private final String version;
 
+  private final String method;
+
   private final String params;
 
   private SignParams(Builder builder) {
@@ -27,6 +27,7 @@ public class SignParams {
     this.appSecret = builder.appSecret;
     this.timestamp = builder.timestamp;
     this.version = builder.version;
+    this.method = builder.method;
     this.params = builder.params;
   }
 
@@ -50,6 +51,10 @@ public class SignParams {
     return version;
   }
 
+  public String getMethod() {
+    return method;
+  }
+
   public String getParams() {
     return params;
   }
@@ -68,6 +73,8 @@ public class SignParams {
     private String timestamp;
 
     private String version;
+
+    private String method;
 
     private String params;
 
@@ -91,6 +98,11 @@ public class SignParams {
       return this;
     }
 
+    public Builder method(String method) {
+      this.method = method;
+      return this;
+    }
+
     public Builder params(String params) {
       this.params = params;
       return this;
@@ -101,7 +113,8 @@ public class SignParams {
       Validate.isTrue(StringUtils.isNotBlank(appSecret), "appSecret");
       Validate.isTrue(StringUtils.isNotBlank(timestamp), "timestamp");
       Validate.isTrue(StringUtils.isNotBlank(version), "version");
-      Validate.isTrue(Objects.nonNull(params), "params");
+      Validate.isTrue(StringUtils.isNotBlank(method), "method");
+      Validate.isTrue(StringUtils.isNotBlank(params), "params");
       return new SignParams(this);
     }
   }

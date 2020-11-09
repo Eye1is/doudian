@@ -1,6 +1,10 @@
 package me.gaigeshen.doudian.api.request;
 
 import me.gaigeshen.doudian.api.Constants;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.util.Objects;
 
 /**
  * 默认的请求数据，该请求数据表达的是业务请求
@@ -17,6 +21,8 @@ public class DefaultRequest implements Request {
   }
 
   public static DefaultRequest create(String shopId, Params params) {
+    Validate.isTrue(StringUtils.isNotBlank(shopId), "shopId");
+    Validate.isTrue(Objects.nonNull(params), "params");
     return new DefaultRequest(shopId, params);
   }
 

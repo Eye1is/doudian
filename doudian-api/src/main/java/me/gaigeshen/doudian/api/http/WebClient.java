@@ -68,15 +68,15 @@ public class WebClient implements Closeable {
             .build();
   }
 
-  public String execute(HttpUriRequest req) {
+  public String execute(HttpUriRequest req) throws WebClientException {
     return execute(req, new BasicResponseHandler());
   }
 
-  public <T> T execute(HttpUriRequest req, AbstractResponseHandler<T> handler) {
+  public <T> T execute(HttpUriRequest req, AbstractResponseHandler<T> handler) throws WebClientException {
     try {
       return client.execute(req, handler);
     } catch (IOException e) {
-      throw new IllegalStateException("Could not execute request:: " + req, e);
+      throw new WebClientException("Could not execute request:: " + req, e);
     }
   }
 

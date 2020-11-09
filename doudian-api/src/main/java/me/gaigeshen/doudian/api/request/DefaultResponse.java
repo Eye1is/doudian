@@ -1,8 +1,6 @@
 package me.gaigeshen.doudian.api.request;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import me.gaigeshen.doudian.api.request.exception.ResponseCreationException;
-import me.gaigeshen.doudian.api.request.exception.ResponseParseException;
 import me.gaigeshen.doudian.api.util.JsonUtils;
 
 import java.util.Map;
@@ -32,13 +30,13 @@ public class DefaultResponse implements Response {
     this.message = message;
   }
 
-  public static DefaultResponse create(String rawString) throws ResponseCreationException {
+  public static DefaultResponse create(String rawString) throws ResponseParseException {
     try {
       JsonNode jsonNode = parseJsonNode(rawString);
       JsonNode reusltJsonNode = parseResultJsonNode(jsonNode);
       return new DefaultResponse(rawString, reusltJsonNode, confirmSuccessStatus(jsonNode), confirmMessageStatus(jsonNode));
     } catch (Exception e) {
-      throw new ResponseCreationException("Cannot create response:: raw string " + rawString, e);
+      throw new ResponseParseException("Cannot create response:: raw string " + rawString, e);
     }
   }
 
@@ -83,7 +81,7 @@ public class DefaultResponse implements Response {
     try {
       return JsonUtils.parseMapping(resultJsonNode);
     } catch (Exception e) {
-      throw new ResponseParseException("Cannot parse to mapping:: result raw string " + resultRawString);
+      throw new ResponseParseException("Cannot parse to mapping:: " + resultRawString);
     }
   }
 }

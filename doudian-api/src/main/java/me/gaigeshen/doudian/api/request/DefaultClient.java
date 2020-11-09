@@ -4,7 +4,7 @@ import me.gaigeshen.doudian.api.AppConfig;
 import me.gaigeshen.doudian.api.authorization.AccessToken;
 import me.gaigeshen.doudian.api.authorization.AccessTokenManager;
 import me.gaigeshen.doudian.api.http.WebClient;
-import me.gaigeshen.doudian.api.request.exception.*;
+import me.gaigeshen.doudian.api.http.WebClientException;
 import me.gaigeshen.doudian.api.request.sign.SignGenerator;
 import me.gaigeshen.doudian.api.request.sign.SignGeneratorFactory;
 import me.gaigeshen.doudian.api.request.sign.SignMethod;
@@ -45,9 +45,9 @@ public class DefaultClient implements Client {
   private final WebClient webClient;
 
   private DefaultClient(AppConfig appConfig, AccessTokenManager accessTokenManager, WebClient webClient) {
-    Validate.isTrue(Objects.nonNull(appConfig), "appConfig is required");
-    Validate.isTrue(Objects.nonNull(accessTokenManager), "accessTokenManager is required");
-    Validate.isTrue(Objects.nonNull(webClient), "webClient is required");
+    Validate.isTrue(Objects.nonNull(appConfig), "appConfig");
+    Validate.isTrue(Objects.nonNull(accessTokenManager), "accessTokenManager");
+    Validate.isTrue(Objects.nonNull(webClient), "webClient");
     this.accessTokenManager = accessTokenManager;
     this.appConfig = appConfig;
     this.webClient = webClient;
@@ -58,37 +58,42 @@ public class DefaultClient implements Client {
   }
 
   @Override
-  public Response execute(Request req) throws RequestException, ResponseCreationException {
+  public Response execute(Request req) throws RequestExecutionException {
     if (req instanceof DefaultRequest) {
-      return executeDefaultRequest((DefaultRequest) req);
+      try {
+        return executeDefaultRequest((DefaultRequest) req);
+      } catch (WebClientException e) {
+        throw new RequestExecutionException("Web client exception:: uri " + req.getUri(), e);
+      }
     }
-    return DefaultResponse.create(webClient.execute(new HttpGet(req.getUri())));
+    String rawString;
+    try {
+      rawString = webClient.execute(new HttpGet(req.getUri()));
+    } catch (WebClientException e) {
+      throw new RequestExecutionException("Web client exception:: uri " + req.getUri(), e);
+    }
+    return DefaultResponse.create(rawString);
   }
 
   @Override
-  public <T extends Result> T executeResult(Request req, Class<T> resultClass) throws RequestException, ResponseCreationException {
+  public <T extends Result> T executeResult(Request req, Class<T> resultClass) throws RequestExecutionException {
     return resultJsonDeserializer.deserializeResult(executeSuccessResultRawString(req), resultClass);
   }
 
   @Override
-  public <T extends Result> List<T> executeResults(Request req, Class<T> resultClass) throws RequestException, ResponseCreationException {
+  public <T extends Result> List<T> executeResults(Request req, Class<T> resultClass) throws RequestExecutionException {
     return resultJsonDeserializer.deserializeResults(executeSuccessResultRawString(req), resultClass);
   }
 
-  private String executeSuccessResultRawString(Request req) throws RequestException, ResponseCreationException {
+  private String executeSuccessResultRawString(Request req) throws RequestExecutionException {
     Response resp = execute(req);
     if (resp.isFailed()) {
-      String message = StringUtils.isNotBlank(resp.getMessage()) ? resp.getMessage() : "Execute response failed:: " + resp.getRawString();
-      if (req instanceof SimpleRequest) {
-        throw new RequestException(message);
-      } else {
-
-      }
+      throw new RequestResultException(StringUtils.isNotBlank(resp.getMessage()) ? resp.getMessage() : resp.getRawString());
     }
     return resp.getResultRawString();
   }
 
-  private Response executeDefaultRequest(DefaultRequest defaultRequest) throws NoAccessTokenRequestException, ResponseCreationException {
+  private Response executeDefaultRequest(DefaultRequest defaultRequest) throws RequestExecutionException, WebClientException {
     String accessTokenValue = findAccessTokenValue(defaultRequest.getShopId());
     String timestamp = TimestampUtils.getCurrentTimestamp();
     Params params = defaultRequest.getParams();
@@ -114,10 +119,10 @@ public class DefaultClient implements Client {
     return DefaultResponse.create(webClient.execute(post));
   }
 
-  private String findAccessTokenValue(String shopId) throws NoAccessTokenRequestException {
+  private String findAccessTokenValue(String shopId) throws RequestExecutionException {
     AccessToken accessToken = accessTokenManager.findAccessToken(shopId);
     if (Objects.isNull(accessToken)) {
-      throw new NoAccessTokenRequestException(shopId, "Could not find access token:: shop id " + shopId);
+      throw new RequestExecutionException("Could not find access token:: shop id " + shopId);
     }
     return accessToken.getAccessToken();
   }

@@ -1,11 +1,11 @@
-package me.gaigeshen.doudian.api.request.exception;
+package me.gaigeshen.doudian.api.request;
 
 /**
+ * 转换请求执行结果的时候发生异常
+ *
  * @author gaigeshen
  */
-public class ResponseParseException extends ResponseException {
-  public ResponseParseException() {
-  }
+public class ResponseParseException extends RequestExecutionException {
 
   public ResponseParseException(String message) {
     super(message);

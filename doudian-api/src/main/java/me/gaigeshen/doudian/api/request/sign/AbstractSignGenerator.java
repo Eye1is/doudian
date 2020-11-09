@@ -17,8 +17,8 @@ public abstract class AbstractSignGenerator implements SignGenerator {
     allParams.put("app_key", signParams.getAppKey());
     allParams.put("timestamp", signParams.getTimestamp());
     allParams.put("v", signParams.getVersion());
-    allParams.put("method", signParams.getParams().getMethod());
-    allParams.put("param_json", signParams.getParams().toJsonString());
+    allParams.put("method", signParams.getMethod());
+    allParams.put("param_json", signParams.getParams());
 
     StringBuilder builder = new StringBuilder();
     for (Map.Entry<String, Object> entry : allParams.entrySet()) {
