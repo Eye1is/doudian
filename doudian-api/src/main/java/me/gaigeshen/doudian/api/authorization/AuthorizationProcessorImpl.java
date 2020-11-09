@@ -66,8 +66,7 @@ public class AuthorizationProcessorImpl implements AuthorizationProcessor {
     } catch (Exception e) {
       throw new IllegalStateException("Could not handle authorized:: authorization code " + authorizationCode);
     }
-    accessTokenManager.saveAccessToken(accessToken);
-    return accessToken;
+    return accessTokenManager.saveAccessToken(accessToken);
   }
 
   /**
@@ -76,15 +75,20 @@ public class AuthorizationProcessorImpl implements AuthorizationProcessor {
    * @param authorizationCode 授权码
    * @return 获取远程的访问令牌
    */
-  private AccessToken getRemoteAccessToken(String authorizationCode) {
+  private AccessToken getRemoteAccessToken(String authorizationCode) throws Exception {
     HttpGet req = new HttpGet(getAccessTokenUri(appConfig.getAppKey(), appConfig.getAppSecret(), authorizationCode));
     String rawString = webClient.execute(req);
     DefaultResponse response = DefaultResponse.create(rawString);
-    if (!response.isSuccess()) {
+    if (response.isFailed()) {
       throw new IllegalStateException("Could not get remote access token, " + response.getMessage() + ":: authorization code "
               + authorizationCode);
     }
-    Map<String, Object> accessTokenData = response.parseMapping();
+    Map<String, Object> accessTokenData = null;
+    try {
+      accessTokenData = response.parseMapping();
+    } catch (me.gaigeshen.doudian.api.request.exception.ResponseParseException e) {
+      e.printStackTrace();
+    }
     String accessToken = MapUtils.getString(accessTokenData, "access_token");
     String refreshToken = MapUtils.getString(accessTokenData, "refresh_token");
     String scope = MapUtils.getString(accessTokenData, "scope");

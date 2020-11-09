@@ -1,9 +1,10 @@
 package me.gaigeshen.doudian.api.request;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import me.gaigeshen.doudian.api.request.exception.ResponseCreationException;
+import me.gaigeshen.doudian.api.request.exception.ResponseParseException;
 import me.gaigeshen.doudian.api.util.JsonUtils;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,30 +16,37 @@ public class DefaultResponse implements Response {
 
   private final String rawString;
 
+  private final String resultRawString;
+
+  private final JsonNode resultJsonNode;
+
   private final boolean success;
 
   private final String message;
 
-  private final JsonNode dataJsonNode;
-
-  private DefaultResponse(String rawString, boolean success, String message, JsonNode dataJsonNode) {
+  private DefaultResponse(String rawString, JsonNode resultJsonNode, boolean success, String message) {
     this.rawString = rawString;
+    this.resultRawString = JsonUtils.toJson(resultJsonNode);
+    this.resultJsonNode = resultJsonNode;
     this.success = success;
     this.message = message;
-    this.dataJsonNode = dataJsonNode;
   }
 
-  public static DefaultResponse create(String rawString) {
-    JsonNode jsonNode = parseJsonNode(rawString);
-    JsonNode dataJsonNode = parseDataJsonNode(jsonNode);
-    return new DefaultResponse(rawString, confirmSuccessStatus(jsonNode), confirmMessageStatus(jsonNode), dataJsonNode);
+  public static DefaultResponse create(String rawString) throws ResponseCreationException {
+    try {
+      JsonNode jsonNode = parseJsonNode(rawString);
+      JsonNode reusltJsonNode = parseResultJsonNode(jsonNode);
+      return new DefaultResponse(rawString, reusltJsonNode, confirmSuccessStatus(jsonNode), confirmMessageStatus(jsonNode));
+    } catch (Exception e) {
+      throw new ResponseCreationException("Cannot create response:: raw string " + rawString, e);
+    }
   }
 
   private static JsonNode parseJsonNode(String rawString) {
     return JsonUtils.parseJsonNode(rawString);
   }
 
-  private static JsonNode parseDataJsonNode(JsonNode rawJsonNode) {
+  private static JsonNode parseResultJsonNode(JsonNode rawJsonNode) {
     return JsonUtils.parseJsonNode(rawJsonNode, "data");
   }
 
@@ -56,8 +64,13 @@ public class DefaultResponse implements Response {
   }
 
   @Override
-  public boolean isSuccess() {
-    return success;
+  public String getResultRawString() {
+    return resultRawString;
+  }
+
+  @Override
+  public boolean isFailed() {
+    return !success;
   }
 
   @Override
@@ -66,18 +79,11 @@ public class DefaultResponse implements Response {
   }
 
   @Override
-  public Map<String, Object> parseMapping() {
-    return JsonUtils.parseMapping(dataJsonNode);
+  public Map<String, Object> parseMapping() throws ResponseParseException {
+    try {
+      return JsonUtils.parseMapping(resultJsonNode);
+    } catch (Exception e) {
+      throw new ResponseParseException("Cannot parse to mapping:: result raw string " + resultRawString);
+    }
   }
-
-  @Override
-  public <T> T parseObject(Class<T> targetClass) {
-    return JsonUtils.parseObject(dataJsonNode, targetClass);
-  }
-
-  @Override
-  public <T> List<T> parseList(Class<T> itemClass) {
-    return JsonUtils.parseArray(dataJsonNode, itemClass);
-  }
-
 }

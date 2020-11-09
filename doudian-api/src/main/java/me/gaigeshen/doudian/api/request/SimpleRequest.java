@@ -1,7 +1,5 @@
 package me.gaigeshen.doudian.api.request;
 
-import me.gaigeshen.doudian.api.request.param.Params;
-
 /**
  * 简单请求的数据，仅包含请求链接地址
  *
@@ -25,7 +23,19 @@ public class SimpleRequest implements Request {
   }
 
   /**
+   * 由于是简单请求，所以返回的店铺编号为空
+   *
+   * @return 始终返回空
+   */
+  @Override
+  public String getShopId() {
+    return null;
+  }
+
+  /**
    * 由于是简单请求，所以返回的业务参数为空
+   *
+   * @return 始终返回空
    */
   @Override
   public Params getParams() {

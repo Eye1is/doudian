@@ -1,6 +1,5 @@
 package me.gaigeshen.doudian.api.util;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,7 +18,6 @@ public class JsonUtils {
 
   static {
     objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
   }
 
   private JsonUtils() { }
@@ -32,7 +30,7 @@ public class JsonUtils {
     try {
       return objectMapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException("Cannot to json from: " + object);
+      throw new IllegalArgumentException("Cannot parse to json from: " + object);
     }
   }
 
@@ -158,6 +156,30 @@ public class JsonUtils {
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException("Cannot parse to array from: " + jsonNode);
     }
+  }
+
+  public static boolean parseBooleanValue(String json) {
+    return parseBooleanValue(parseJsonNode(json));
+  }
+
+  public static void main(String[] args) {
+    System.out.println(parseBooleanValue("true"));
+  }
+
+  public static String parseStringValue(String json) {
+    return parseStringValue(parseJsonNode(json));
+  }
+
+  public static int parseIntValue(String json) {
+    return parseIntValue(parseJsonNode(json));
+  }
+
+  public static <T> T parseObject(String json, Class<T> targetClass) {
+    return parseObject(parseJsonNode(json), targetClass);
+  }
+
+  public static <T> List<T> parseArray(String json, Class<T> targetClass) {
+    return parseArray(parseJsonNode(json), targetClass);
   }
 
   public static boolean parseBooleanValue(String json, String field) {

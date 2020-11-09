@@ -1,4 +1,4 @@
-package me.gaigeshen.doudian.api.request.param;
+package me.gaigeshen.doudian.api.request;
 
 /**
  * 业务参数，表达的是某个业务需要的所有参数和参数值
@@ -12,12 +12,4 @@ public interface Params {
    * @return 接口名称
    */
   String getMethod();
-
-  /**
-   * 将此业务参数转成字符串
-   *
-   * @return 转换的字符串
-   */
-  String toJsonString();
-
 }

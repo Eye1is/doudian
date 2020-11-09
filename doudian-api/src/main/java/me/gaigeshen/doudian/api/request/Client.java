@@ -1,17 +1,19 @@
 package me.gaigeshen.doudian.api.request;
 
+import me.gaigeshen.doudian.api.request.exception.RequestException;
+import me.gaigeshen.doudian.api.request.exception.ResponseCreationException;
+
+import java.util.List;
+
 /**
- * 请求客户端
  *
  * @author gaigeshen
  */
 public interface Client {
-  /**
-   * 执行请求
-   *
-   * @param req 请求数据
-   * @return 返回响应结果
-   */
-  Response execute(Request req);
 
+  Response execute(Request req) throws RequestException, ResponseCreationException;
+
+  <T extends Result> T executeResult(Request req, Class<T> resultClass) throws RequestException, ResponseCreationException;
+
+  <T extends Result> List<T> executeResults(Request req, Class<T> resultClass) throws RequestException, ResponseCreationException;
 }

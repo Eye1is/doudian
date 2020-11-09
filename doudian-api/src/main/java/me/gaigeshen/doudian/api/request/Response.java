@@ -1,6 +1,7 @@
 package me.gaigeshen.doudian.api.request;
 
-import java.util.List;
+import me.gaigeshen.doudian.api.request.exception.ResponseParseException;
+
 import java.util.Map;
 
 /**
@@ -17,11 +18,18 @@ public interface Response {
   String getRawString();
 
   /**
-   * 返回是否是成功的响应，此处的成功表达的是业务方面的成功与否
+   * 返回业务数据的响应字符串内容
    *
-   * @return 是否是成功的响应
+   * @return 业务数据的响应字符串内容
    */
-  boolean isSuccess();
+  String getResultRawString();
+
+  /**
+   * 返回是否是业务失败的响应，此处的失败表达的是业务方面的失败与否
+   *
+   * @return 是否是失败的响应
+   */
+  boolean isFailed();
 
   /**
    * 如果为业务失败的响应，可能会有失败的消息内容
@@ -31,28 +39,11 @@ public interface Response {
   String getMessage();
 
   /**
-   * 将响应的数据转换为映射对象
+   * 将响应的业务数据转换为映射对象
    *
    * @return 映射对象
+   * @throws ResponseParseException 转换异常
    */
-  Map<String, Object> parseMapping();
-
-  /**
-   * 将响应的数据转换为指定类型的对象
-   *
-   * @param targetClass 指定类型
-   * @param <T> 指定类型
-   * @return 指定类型的对象
-   */
-  <T> T parseObject(Class<T> targetClass);
-
-  /**
-   * 将响应的数据转换为指定类型的对象集合
-   *
-   * @param itemClass 集合内的对象类型
-   * @param <T> 指定类型
-   * @return 指定类型的对象集合
-   */
-  <T> List<T> parseList(Class<T> itemClass);
+  Map<String, Object> parseMapping() throws ResponseParseException;
 
 }

@@ -130,16 +130,21 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
    * @param currentAccessToken 当前的访问令牌
    * @return 获取到的访问令牌
    */
-  private AccessToken getRemoteAccessToken(AccessToken currentAccessToken) {
+  private AccessToken getRemoteAccessToken(AccessToken currentAccessToken) throws Exception {
     String refreshToken = currentAccessToken.getRefreshToken();
     HttpGet req = new HttpGet(getAccessTokenRefreshUri(appConfig.getAppKey(), appConfig.getAppSecret(), refreshToken));
     String rawString = webClient.execute(req);
     DefaultResponse response = DefaultResponse.create(rawString);
-    if (!response.isSuccess()) {
+    if (response.isFailed()) {
       throw new IllegalStateException("Could not get remote access token, " + response.getMessage() + ":: shop "
               + currentAccessToken.getShopName());
     }
-    Map<String, Object> accessTokenData = response.parseMapping();
+    Map<String, Object> accessTokenData = null;
+    try {
+      accessTokenData = response.parseMapping();
+    } catch (me.gaigeshen.doudian.api.request.exception.ResponseParseException e) {
+      e.printStackTrace();
+    }
     String accessToken = MapUtils.getString(accessTokenData, "access_token");
     String newRefreshToken = MapUtils.getString(accessTokenData, "refresh_token");
     String scope = MapUtils.getString(accessTokenData, "scope");

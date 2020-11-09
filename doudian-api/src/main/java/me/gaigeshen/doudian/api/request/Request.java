@@ -1,7 +1,5 @@
 package me.gaigeshen.doudian.api.request;
 
-import me.gaigeshen.doudian.api.request.param.Params;
-
 /**
  * 表达的是某个请求中的数据
  *
@@ -14,6 +12,13 @@ public interface Request {
    * @return 请求链接
    */
   String getUri();
+
+  /**
+   * 返回店铺编号
+   *
+   * @return 店铺编号
+   */
+  String getShopId();
 
   /**
    * 返回请求中的业务参数数据

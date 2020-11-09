@@ -1,6 +1,5 @@
 package me.gaigeshen.doudian.api.request.sign;
 
-import me.gaigeshen.doudian.api.request.param.Params;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
@@ -21,7 +20,7 @@ public class SignParams {
 
   private final String version;
 
-  private final Params params;
+  private final String params;
 
   private SignParams(Builder builder) {
     this.appKey = builder.appKey;
@@ -51,7 +50,7 @@ public class SignParams {
     return version;
   }
 
-  public Params getParams() {
+  public String getParams() {
     return params;
   }
 
@@ -70,7 +69,7 @@ public class SignParams {
 
     private String version;
 
-    private Params params;
+    private String params;
 
     public Builder appKey(String appKey) {
       this.appKey = appKey;
@@ -92,7 +91,7 @@ public class SignParams {
       return this;
     }
 
-    public Builder params(Params params) {
+    public Builder params(String params) {
       this.params = params;
       return this;
     }

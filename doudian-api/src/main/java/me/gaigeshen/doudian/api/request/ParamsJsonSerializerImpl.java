@@ -1,4 +1,4 @@
-package me.gaigeshen.doudian.api.request.param;
+package me.gaigeshen.doudian.api.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.SerializableString;
@@ -13,30 +13,36 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 /**
- * 抽象的业务参数，具体的业务参数类需要继承此类，并且使用对应的字段来表达所有的业务参数
- *
  * @author gaigeshen
  */
-public abstract class AbstractParams implements Params {
+public class ParamsJsonSerializerImpl implements ParamsJsonSerializer {
 
   private final static ObjectMapper objectMapper = new ObjectMapper();
 
   static {
     objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+    // 排除为空的属性
     objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    // 驼峰转下划线
     objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+    // 转义特殊字符，具体规则见下面内部类
     objectMapper.getFactory().setCharacterEscapes(new SpecialCharacterEscapes());
   }
 
   @Override
-  public final String toJsonString() {
+  public String serializer(Params params) {
+    return serializer(params, false);
+  }
+
+  @Override
+  public String serializer(Params params, boolean stringifyValues) {
     // 先按照预设的规则序列化
-    String json = JsonUtils.toJson(this, objectMapper);
-    // 循环所有的属性并将属性值转为字符串
-    Map<String, String> stringValueMappings = new TreeMap<>();
+    String json = JsonUtils.toJson(params, objectMapper);
+    // 可以循环所有的属性并将属性值转为字符串
+    Map<String, Object> stringValueMappings = new TreeMap<>();
     for (Map.Entry<String, Object> entry : JsonUtils.parseMapping(json).entrySet()) {
       if (!entry.getKey().equals("method") && Objects.nonNull(entry.getValue())) {
-        stringValueMappings.put(entry.getKey(), entry.getValue() + "");
+        stringValueMappings.put(entry.getKey(), stringifyValues ? entry.getValue() + "" : entry.getValue());
       }
     }
     return JsonUtils.toJson(stringValueMappings, objectMapper);
@@ -67,5 +73,4 @@ public abstract class AbstractParams implements Params {
       return null;
     }
   }
-
 }
