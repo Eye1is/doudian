@@ -1,5 +1,8 @@
 package me.gaigeshen.doudian.api.util;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -12,6 +15,8 @@ public class URLCodecUtils {
   private URLCodecUtils() {}
 
   public static String encode(String url, String charset) {
+    Validate.isTrue(StringUtils.isNotBlank(url), "url cannot be null or blank");
+    Validate.isTrue(StringUtils.isNotBlank(charset), "charset cannot be null or blank");
     try {
       return URLEncoder.encode(url, charset);
     } catch (UnsupportedEncodingException e) {
@@ -20,6 +25,8 @@ public class URLCodecUtils {
   }
 
   public static String decode(String url, String charset) {
+    Validate.isTrue(StringUtils.isNotBlank(url), "url cannot be null or blank");
+    Validate.isTrue(StringUtils.isNotBlank(charset), "charset cannot be null or blank");
     try {
       return URLDecoder.decode(url, charset);
     } catch (UnsupportedEncodingException e) {
