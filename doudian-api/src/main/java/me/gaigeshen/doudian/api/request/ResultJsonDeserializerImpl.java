@@ -22,11 +22,11 @@ public class ResultJsonDeserializerImpl implements ResultJsonDeserializer {
 
   @Override
   public <T extends Result> T deserializeResult(String resultRawString, Class<T> targetClass) {
-    return JsonUtils.parseObject(resultRawString, targetClass);
+    return JsonUtils.parseObject(resultRawString, objectMapper, targetClass);
   }
 
   @Override
   public <T extends Result> List<T> deserializeResults(String resultRawString, Class<T> targetItemClass) {
-    return JsonUtils.parseArray(resultRawString, targetItemClass);
+    return JsonUtils.parseArray(resultRawString, objectMapper);
   }
 }

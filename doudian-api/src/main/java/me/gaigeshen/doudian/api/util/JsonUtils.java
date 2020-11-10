@@ -1,6 +1,7 @@
 package me.gaigeshen.doudian.api.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +23,7 @@ public class JsonUtils {
 
   private JsonUtils() { }
 
+
   public static String toJson(Object object) {
     return toJson(object, objectMapper);
   }
@@ -31,6 +33,38 @@ public class JsonUtils {
       return objectMapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException("Cannot parse to json from: " + object);
+    }
+  }
+
+  public static <T> T parseObject(String json, Class<T> targetClass) {
+    try {
+      return objectMapper.readValue(json, targetClass);
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Cannot parse to object from: " + json);
+    }
+  }
+
+  public static <T> T parseObject(String json, ObjectMapper objectMapper, Class<T> targetClass) {
+    try {
+      return objectMapper.readValue(json, targetClass);
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Cannot parse to object from: " + json);
+    }
+  }
+
+  public static <T> List<T> parseArray(String json) {
+    try {
+      return objectMapper.readValue(json, new TypeReference<List<T>>() {});
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Cannot parse to array from: " + json);
+    }
+  }
+
+  public static <T> List<T> parseArray(String json, ObjectMapper objectMapper) {
+    try {
+      return objectMapper.readValue(json, new TypeReference<List<T>>() {});
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Cannot parse to array from: " + json);
     }
   }
 
@@ -115,47 +149,28 @@ public class JsonUtils {
     if (!jsonNode.isBoolean()) {
       throw new IllegalArgumentException("Cannot parse to boolean from: " + jsonNode);
     }
-    return jsonNode.asBoolean();
+    return jsonNode.booleanValue();
   }
 
   public static String parseStringValue(JsonNode jsonNode) {
     if (!jsonNode.isTextual()) {
       throw new IllegalArgumentException("Cannot parse to string from: " + jsonNode);
     }
-    return jsonNode.asText();
+    return jsonNode.textValue();
   }
 
   public static int parseIntValue(JsonNode jsonNode) {
-    if (!jsonNode.isInt()) {
+    if (!jsonNode.canConvertToInt()) {
       throw new IllegalArgumentException("Cannot parse to int from: " + jsonNode);
     }
     return jsonNode.asInt();
   }
 
-  public static <T> T parseObject(JsonNode jsonNode, Class<T> targetClass) {
-    if (!jsonNode.isObject()) {
-      throw new IllegalArgumentException("Can only support json object, but json input: " + jsonNode);
+  public static long parseLongValue(JsonNode jsonNode) {
+    if (!jsonNode.canConvertToLong()) {
+      throw new IllegalArgumentException("Cannot parse to long from: " + jsonNode);
     }
-    try {
-      return objectMapper.treeToValue(jsonNode, targetClass);
-    } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException("Cannot parse to object from: " + jsonNode);
-    }
-  }
-
-  public static <T> List<T> parseArray(JsonNode jsonNode, Class<T> targetClass) {
-    if (!jsonNode.isArray()) {
-      throw new IllegalArgumentException("Can only support json array, but json input: " + jsonNode);
-    }
-    List<T> result = new ArrayList<>();
-    try {
-      for (JsonNode node : jsonNode) {
-        result.add(objectMapper.treeToValue(node, targetClass));
-      }
-      return result;
-    } catch (JsonProcessingException e) {
-      throw new IllegalArgumentException("Cannot parse to array from: " + jsonNode);
-    }
+    return jsonNode.asLong();
   }
 
   public static boolean parseBooleanValue(String json) {
@@ -170,12 +185,8 @@ public class JsonUtils {
     return parseIntValue(parseJsonNode(json));
   }
 
-  public static <T> T parseObject(String json, Class<T> targetClass) {
-    return parseObject(parseJsonNode(json), targetClass);
-  }
-
-  public static <T> List<T> parseArray(String json, Class<T> targetClass) {
-    return parseArray(parseJsonNode(json), targetClass);
+  public static long parseLongValue(String json) {
+    return parseLongValue(parseJsonNode(json));
   }
 
   public static boolean parseBooleanValue(String json, String field) {
@@ -190,12 +201,8 @@ public class JsonUtils {
     return parseIntValue(parseJsonNode(json, field));
   }
 
-  public static <T> T parseObject(String json, String field, Class<T> targetClass) {
-    return parseObject(parseJsonNode(json, field), targetClass);
-  }
-
-  public static <T> List<T> parseArray(String json, String field, Class<T> targetClass) {
-    return parseArray(parseJsonNode(json, field), targetClass);
+  public static long parseLongValue(String json, String field) {
+    return parseLongValue(parseJsonNode(json, field));
   }
 
   public static boolean parseBooleanValue(JsonNode jsonNode, String field) {
@@ -210,11 +217,7 @@ public class JsonUtils {
     return parseIntValue(parseJsonNode(jsonNode, field));
   }
 
-  public static <T> T parseObject(JsonNode jsonNode, String field, Class<T> targetClass) {
-    return parseObject(parseJsonNode(jsonNode, field), targetClass);
-  }
-
-  public static <T> List<T> parseArray(JsonNode jsonNode, String field, Class<T> targetClass) {
-    return parseArray(parseJsonNode(jsonNode, field), targetClass);
+  public static long parseLongValue(JsonNode jsonNode, String field) {
+    return parseLongValue(parseJsonNode(jsonNode, field));
   }
 }
