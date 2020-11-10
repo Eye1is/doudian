@@ -162,10 +162,6 @@ public class JsonUtils {
     return parseBooleanValue(parseJsonNode(json));
   }
 
-  public static void main(String[] args) {
-    System.out.println(parseBooleanValue("true"));
-  }
-
   public static String parseStringValue(String json) {
     return parseStringValue(parseJsonNode(json));
   }
