@@ -4,18 +4,16 @@ import me.gaigeshen.doudian.api.AppConfig;
 import me.gaigeshen.doudian.api.http.WebClient;
 import me.gaigeshen.doudian.api.http.WebClientException;
 import me.gaigeshen.doudian.api.request.DefaultResponse;
+import me.gaigeshen.doudian.api.request.RequestResultException;
 import me.gaigeshen.doudian.api.request.ResponseParseException;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
+import me.gaigeshen.doudian.api.request.ResponseParser;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.client.methods.HttpGet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -38,6 +36,8 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
   private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(DEFAULT_THREAD_POOL_SIZE);
 
   private final WebClient webClient = WebClient.builder().build();
+
+  private final ResponseParser<AccessToken> accessTokenResponseParser = new AccessTokenResponseParserImpl();
 
   private final AccessTokenStore accessTokenStore;
 
@@ -133,32 +133,13 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
    * @return 获取到的访问令牌
    * @throws WebClientException 请求远程数据失败
    * @throws ResponseParseException 转换请求结果失败
+   * @throws RequestResultException 请求执行结果异常
    */
-  private AccessToken getRemoteAccessToken(AccessToken currentAccessToken) throws WebClientException, ResponseParseException {
+  private AccessToken getRemoteAccessToken(AccessToken currentAccessToken) throws WebClientException, ResponseParseException, RequestResultException {
     String refreshToken = currentAccessToken.getRefreshToken();
     HttpGet req = new HttpGet(getAccessTokenRefreshUri(appConfig.getAppKey(), appConfig.getAppSecret(), refreshToken));
     String rawString = webClient.execute(req);
-    DefaultResponse response = DefaultResponse.create(rawString);
-    if (response.isFailed()) {
-      throw new IllegalStateException("Could not get remote access token, " + response.getMessage() + ":: shop "
-              + currentAccessToken.getShopName());
-    }
-    Map<String, Object> accessTokenData = response.parseMapping();
-    String accessToken = MapUtils.getString(accessTokenData, "access_token");
-    String newRefreshToken = MapUtils.getString(accessTokenData, "refresh_token");
-    String scope = MapUtils.getString(accessTokenData, "scope");
-    String shopId = MapUtils.getString(accessTokenData, "shop_id");
-    String shopName = MapUtils.getString(accessTokenData, "shop_name");
-    Long expiresIn = MapUtils.getLong(accessTokenData, "expires_in");
-    if (StringUtils.isAnyBlank(accessToken, refreshToken, shopId) || Objects.isNull(expiresIn)) {
-      throw new IllegalStateException("Could not get valid remote access token:: shop " + currentAccessToken.getShopName());
-    }
-    return AccessToken.builder()
-            .setAccessToken(accessToken).setRefreshToken(newRefreshToken)
-            .setScope(scope).setShopId(shopId).setShopName(shopName)
-            .setExpiresIn(expiresIn).setExpiresTimestamp(System.currentTimeMillis() / 1000 + expiresIn)
-            .setUpdateTime(new Date())
-            .build();
+    return accessTokenResponseParser.parse(DefaultResponse.create(rawString));
   }
 
   /**

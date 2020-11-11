@@ -5,15 +5,14 @@ import me.gaigeshen.doudian.api.Constants;
 import me.gaigeshen.doudian.api.http.WebClient;
 import me.gaigeshen.doudian.api.http.WebClientException;
 import me.gaigeshen.doudian.api.request.DefaultResponse;
+import me.gaigeshen.doudian.api.request.RequestResultException;
 import me.gaigeshen.doudian.api.request.ResponseParseException;
+import me.gaigeshen.doudian.api.request.ResponseParser;
 import me.gaigeshen.doudian.api.util.URLCodecUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.client.methods.HttpGet;
 
-import java.util.Date;
-import java.util.Map;
 import java.util.Objects;
 
 import static me.gaigeshen.doudian.api.Constants.getAccessTokenUri;
@@ -24,6 +23,8 @@ import static me.gaigeshen.doudian.api.Constants.getAccessTokenUri;
 public class AuthorizationProcessorImpl implements AuthorizationProcessor {
 
   private final WebClient webClient = WebClient.builder().build();
+
+  private final ResponseParser<AccessToken> accessTokenResponseParser = new AccessTokenResponseParserImpl();
 
   private final AppConfig appConfig;
 
@@ -78,30 +79,11 @@ public class AuthorizationProcessorImpl implements AuthorizationProcessor {
    * @return 获取远程的访问令牌
    * @throws WebClientException 请求远程数据失败
    * @throws ResponseParseException 转换请求结果失败
+   * @throws RequestResultException 请求执行结果异常
    */
-  private AccessToken getRemoteAccessToken(String authorizationCode) throws WebClientException, ResponseParseException {
+  private AccessToken getRemoteAccessToken(String authorizationCode) throws WebClientException, ResponseParseException, RequestResultException {
     HttpGet req = new HttpGet(getAccessTokenUri(appConfig.getAppKey(), appConfig.getAppSecret(), authorizationCode));
     String rawString = webClient.execute(req);
-    DefaultResponse response = DefaultResponse.create(rawString);
-    if (response.isFailed()) {
-      throw new IllegalStateException("Could not get remote access token, " + response.getMessage() + ":: authorization code "
-              + authorizationCode);
-    }
-    Map<String, Object> accessTokenData = response.parseMapping();
-    String accessToken = MapUtils.getString(accessTokenData, "access_token");
-    String refreshToken = MapUtils.getString(accessTokenData, "refresh_token");
-    String scope = MapUtils.getString(accessTokenData, "scope");
-    String shopId = MapUtils.getString(accessTokenData, "shop_id");
-    String shopName = MapUtils.getString(accessTokenData, "shop_name");
-    Long expiresIn = MapUtils.getLong(accessTokenData, "expires_in");
-    if (StringUtils.isAnyBlank(accessToken, refreshToken, shopId) || Objects.isNull(expiresIn)) {
-      throw new IllegalStateException("Could not get valid remote access token:: authorization code " + authorizationCode);
-    }
-    return AccessToken.builder()
-            .setAccessToken(accessToken).setRefreshToken(refreshToken)
-            .setScope(scope).setShopId(shopId).setShopName(shopName)
-            .setExpiresIn(expiresIn).setExpiresTimestamp(System.currentTimeMillis() / 1000 + expiresIn)
-            .setUpdateTime(new Date())
-            .build();
+    return accessTokenResponseParser.parse(DefaultResponse.create(rawString));
   }
 }
