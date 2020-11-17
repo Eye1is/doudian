@@ -10,7 +10,6 @@ import me.gaigeshen.doudian.api.request.ResponseParseException;
 import me.gaigeshen.doudian.api.request.ResponseParser;
 import me.gaigeshen.doudian.api.util.URLCodecUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.http.client.methods.HttpGet;
 
 import java.util.Objects;
@@ -18,6 +17,8 @@ import java.util.Objects;
 import static me.gaigeshen.doudian.api.Constants.getAccessTokenUri;
 
 /**
+ * 授权流程处理器实现
+ *
  * @author gaigeshen
  */
 public class AuthorizationProcessorImpl implements AuthorizationProcessor {
@@ -32,17 +33,26 @@ public class AuthorizationProcessorImpl implements AuthorizationProcessor {
 
   private final String redirectUri;
 
-  private AuthorizationProcessorImpl(AppConfig appConfig, AccessTokenManager accessTokenManager, String redirectUri) {
-    Validate.isTrue(Objects.nonNull(appConfig), "appConfig cannot be null");
-    Validate.isTrue(Objects.nonNull(accessTokenManager), "accessTokenManager cannot be null");
-    Validate.isTrue(StringUtils.isNotBlank(redirectUri), "redirectUri cannot be blank");
+  /**
+   * 创建授权流程处理器
+   *
+   * @param appConfig 应用配置
+   * @param accessTokenManager 访问令牌管理器
+   * @param redirectUri 授权回调地址
+   */
+  public AuthorizationProcessorImpl(AppConfig appConfig, AccessTokenManager accessTokenManager, String redirectUri) {
+    if (Objects.isNull(appConfig)) {
+      throw new IllegalArgumentException("appConfig cannot be null");
+    }
+    if (Objects.isNull(accessTokenManager)) {
+      throw new IllegalArgumentException("accessTokenManager cannot be null");
+    }
+    if (StringUtils.isBlank(redirectUri)) {
+      throw new IllegalArgumentException("redirectUri cannot be blank or null");
+    }
     this.appConfig = appConfig;
     this.accessTokenManager = accessTokenManager;
     this.redirectUri = URLCodecUtils.encode(redirectUri, "utf-8");
-  }
-
-  public static AuthorizationProcessorImpl create(AppConfig appConfig, AccessTokenManager accessTokenManager, String redirectUri) {
-    return new AuthorizationProcessorImpl(appConfig, accessTokenManager, redirectUri);
   }
 
   @Override
@@ -56,20 +66,24 @@ public class AuthorizationProcessorImpl implements AuthorizationProcessor {
   }
 
   @Override
-  public AccessToken handleAuthorized(String authorizationCode, String state) {
+  public AccessToken handleAuthorized(String authorizationCode, String state) throws AuthorizationProcessorException {
     // 暂时先不管第二个参数
     return handleAuthorized(authorizationCode);
   }
 
   @Override
-  public AccessToken handleAuthorized(String authorizationCode) {
+  public AccessToken handleAuthorized(String authorizationCode) throws AuthorizationProcessorException {
     AccessToken accessToken;
     try {
       accessToken = getRemoteAccessToken(authorizationCode);
     } catch (Exception e) {
       throw new IllegalStateException("Could not handle authorized:: authorization code " + authorizationCode);
     }
-    return accessTokenManager.saveAccessToken(accessToken);
+    try {
+      return accessTokenManager.saveAccessToken(accessToken);
+    } catch (AccessTokenManagerException e) {
+      throw new AuthorizationProcessorException("Could not handle authorization code:: " + authorizationCode, e);
+    }
   }
 
   /**

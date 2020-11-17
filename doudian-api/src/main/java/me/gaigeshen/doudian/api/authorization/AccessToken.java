@@ -1,10 +1,6 @@
 package me.gaigeshen.doudian.api.authorization;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
-
 import java.util.Date;
-import java.util.Objects;
 
 /**
  * 访问令牌
@@ -138,10 +134,6 @@ public class AccessToken {
     }
 
     public AccessToken build() {
-      Validate.isTrue(StringUtils.isNotBlank(accessToken), "accessToken");
-      Validate.isTrue(StringUtils.isNotBlank(refreshToken), "refreshToken");
-      Validate.isTrue(StringUtils.isNotBlank(shopId), "shopId");
-      Validate.isTrue(Objects.nonNull(updateTime), "updateTime");
       return new AccessToken(this);
     }
   }

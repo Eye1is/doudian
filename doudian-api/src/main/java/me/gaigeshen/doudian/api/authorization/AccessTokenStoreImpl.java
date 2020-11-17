@@ -1,7 +1,5 @@
 package me.gaigeshen.doudian.api.authorization;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +15,6 @@ public class AccessTokenStoreImpl implements AccessTokenStore {
 
   private final Map<String, AccessToken> internalStore = new ConcurrentHashMap<>();
 
-  private AccessTokenStoreImpl() { }
-
-  public static AccessTokenStoreImpl create() {
-    return new AccessTokenStoreImpl();
-  }
-
   @Override
   public boolean saveOrUpdate(AccessToken accessToken) {
     if (Objects.isNull(accessToken)) {
@@ -33,17 +25,18 @@ public class AccessTokenStoreImpl implements AccessTokenStore {
 
   @Override
   public void deleteByShopId(String shopId) {
-    if (StringUtils.isNotBlank(shopId)) {
-      internalStore.remove(shopId);
+    if (Objects.isNull(shopId)) {
+      throw new IllegalArgumentException("Shop id cannot be null");
     }
+    internalStore.remove(shopId);
   }
 
   @Override
   public AccessToken findByShopId(String shopId) {
-    if (StringUtils.isNotBlank(shopId)) {
-      return internalStore.get(shopId);
+    if (Objects.isNull(shopId)) {
+      throw new IllegalArgumentException("Shop id cannot be null");
     }
-    return null;
+    return internalStore.get(shopId);
   }
 
   @Override

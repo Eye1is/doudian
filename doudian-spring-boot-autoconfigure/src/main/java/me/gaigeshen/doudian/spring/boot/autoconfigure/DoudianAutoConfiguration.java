@@ -33,12 +33,12 @@ public class DoudianAutoConfiguration {
 
   @Bean
   public AuthorizationProcessor authorizationProcessor(AppConfig appConfig, AccessTokenManager accessTokenManager) {
-    return AuthorizationProcessorImpl.create(appConfig, accessTokenManager, authorize.getRedirectUri());
+    return new AuthorizationProcessorImpl(appConfig, accessTokenManager, authorize.getRedirectUri());
   }
 
   @Bean
   public AccessTokenManager accessTokenManager(AccessTokenStore accessTokenStore, AppConfig appConfig) {
-    return AccessTokenManagerImpl.create(accessTokenStore, appConfig);
+    return new AccessTokenManagerImpl(accessTokenStore, appConfig);
   }
 
   @Bean
@@ -47,10 +47,10 @@ public class DoudianAutoConfiguration {
     // may be throws exception by bean factory if no such bean or bean type invalid
     String dataSource = authorize.getDataSource();
     if (Objects.nonNull(dataSource) && !dataSource.trim().equals("")) {
-      return AccessTokenStoreJdbcImpl.create(beanFactory.getBean(dataSource, DataSource.class));
+      return new AccessTokenStoreJdbcImpl(beanFactory.getBean(dataSource, DataSource.class));
     }
     // No data source bean name provided
-    return AccessTokenStoreImpl.create();
+    return new AccessTokenStoreImpl();
   }
 
   @Bean

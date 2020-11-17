@@ -120,7 +120,12 @@ public class DefaultClient implements Client {
   }
 
   private String findAccessTokenValue(String shopId) throws RequestExecutionException {
-    AccessToken accessToken = accessTokenManager.findAccessToken(shopId);
+    AccessToken accessToken = null;
+    try {
+      accessToken = accessTokenManager.findAccessToken(shopId);
+    } catch (me.gaigeshen.doudian.api.authorization.AccessTokenManagerException e) {
+      e.printStackTrace();
+    }
     if (Objects.isNull(accessToken)) {
       throw new RequestExecutionException("Could not find access token:: shop id " + shopId);
     }

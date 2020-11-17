@@ -3,11 +3,7 @@ package me.gaigeshen.doudian.api.authorization;
 import me.gaigeshen.doudian.api.AppConfig;
 import me.gaigeshen.doudian.api.http.WebClient;
 import me.gaigeshen.doudian.api.http.WebClientException;
-import me.gaigeshen.doudian.api.request.DefaultResponse;
-import me.gaigeshen.doudian.api.request.RequestResultException;
-import me.gaigeshen.doudian.api.request.ResponseParseException;
-import me.gaigeshen.doudian.api.request.ResponseParser;
-import org.apache.commons.lang3.Validate;
+import me.gaigeshen.doudian.api.request.*;
 import org.apache.http.client.methods.HttpGet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +27,13 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
 
   private static final Logger logger = LoggerFactory.getLogger(AccessTokenManagerImpl.class);
 
-  private static final int DEFAULT_THREAD_POOL_SIZE = 1;
+  private static final int STATUS_WAIT_START = 0;
+
+  private static final int STATUS_STARTED = 1;
+
+  private static final int STATUS_STOPED = 2;
+
+  private static final int DEFAULT_THREAD_POOL_SIZE = 2;
 
   private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(DEFAULT_THREAD_POOL_SIZE);
 
@@ -43,72 +45,85 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
 
   private final AppConfig appConfig;
 
-  private AccessTokenManagerImpl(AccessTokenStore accessTokenStore, AppConfig appConfig) {
-    Validate.isTrue(Objects.nonNull(accessTokenStore), "accessTokenStore cannot be null");
-    Validate.isTrue(Objects.nonNull(appConfig), "appConfig can not be null");
-    this.accessTokenStore = new AccessTokenStoreCacheWrapper(accessTokenStore);
-    this.appConfig = appConfig;
-  }
+  private int status = STATUS_WAIT_START;
 
   /**
    * 创建访问令牌管理器
    *
    * @param accessTokenStore 访问令牌存储器不能为空
    * @param appConfig 应用配置不能为空
-   * @return 访问令牌管理器
    */
-  public static AccessTokenManagerImpl create(AccessTokenStore accessTokenStore, AppConfig appConfig) {
-    return new AccessTokenManagerImpl(accessTokenStore, appConfig);
+  public AccessTokenManagerImpl(AccessTokenStore accessTokenStore, AppConfig appConfig) {
+    if (Objects.isNull(accessTokenStore) || Objects.isNull(appConfig)) {
+      throw new IllegalArgumentException("accessTokenStore and appConfig cannot be null");
+    }
+    this.accessTokenStore = new AccessTokenStoreCacheWrapper(accessTokenStore);
+    this.appConfig = appConfig;
   }
 
   @Override
-  public AccessTokenStore getAccessTokenStore() {
-    return accessTokenStore;
-  }
-
-  @Override
-  public AccessToken saveAccessToken(AccessToken accessToken) {
-    if (accessTokenStore.saveOrUpdate(accessToken)) {
-      new AccessTokenUpdateTask(accessToken).start();
+  public AccessToken saveAccessToken(AccessToken accessToken) throws AccessTokenManagerException {
+    try {
+      if (accessTokenStore.saveOrUpdate(accessToken)) {
+        new AccessTokenUpdateTask(accessToken).start();
+      }
+    } catch (AccessTokenStoreException e) {
+      throw new AccessTokenManagerException("Could not save or update access token because store exception:: ", e);
     }
     return accessToken;
   }
 
   @Override
-  public AccessToken findAccessToken(String shopId) {
-    return accessTokenStore.findByShopId(shopId);
+  public AccessToken findAccessToken(String shopId) throws AccessTokenManagerException {
+    try {
+      return accessTokenStore.findByShopId(shopId);
+    } catch (AccessTokenStoreException e) {
+      throw new AccessTokenManagerException("Could not find access token because store exception:: ", e);
+    }
   }
 
   @Override
-  public List<AccessToken> findAccessTokens() {
-    return accessTokenStore.findAll();
+  public List<AccessToken> findAccessTokens() throws AccessTokenManagerException {
+    try {
+      return accessTokenStore.findAll();
+    } catch (AccessTokenStoreException e) {
+      throw new AccessTokenManagerException("Could not find all access tokens because store exception:: ", e);
+    }
   }
 
   @Override
-  public void deleteAccessToken(String shopId) {
-    accessTokenStore.deleteByShopId(shopId);
+  public void deleteAccessToken(String shopId) throws AccessTokenManagerException {
+    try {
+      accessTokenStore.deleteByShopId(shopId);
+    } catch (AccessTokenStoreException e) {
+      throw new AccessTokenManagerException("Could not delete access token because store exception:: ", e);
+    }
   }
 
   @Override
-  public void startup() {
-    startAllUpdateTasks();
-  }
-
-  /**
-   * 从访问令牌存储器中获取所有的访问令牌，然后为每个访问令牌开启更新任务
-   */
-  private void startAllUpdateTasks() {
-    for (AccessToken accessToken : accessTokenStore.findAll()) {
+  public synchronized void startup() throws AccessTokenManagerException {
+    if (status > STATUS_WAIT_START) {
+      logger.warn("Could not startup because this access token manager has started::");
+      return;
+    }
+    status = STATUS_STARTED;
+    for (AccessToken accessToken : findAccessTokens()) {
       new AccessTokenUpdateTask(accessToken).start();
     }
   }
 
   @Override
-  public void shutdown() {
+  public synchronized void shutdown() throws AccessTokenManagerException {
+    if (status != STATUS_STARTED) {
+      logger.warn("Could not shutdown because access token manager has not started or stoped::");
+      return;
+    }
+    status = STATUS_STOPED;
     executorService.shutdownNow();
     try {
       executorService.awaitTermination(10, TimeUnit.SECONDS);
-    } catch (InterruptedException ignored) {
+    } catch (InterruptedException e) {
+      throw new AccessTokenManagerException("Current thread interrupted while shutting down access token manager", e);
     }
     try {
       webClient.close();
@@ -121,8 +136,9 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
    *
    * @param shopId 店铺编号
    * @return 是否存在该店铺的访问令牌
+   * @throws AccessTokenManagerException 查询该店铺的访问令牌时发生异常
    */
-  private boolean hasShopAccessToken(String shopId) {
+  private boolean hasShopAccessToken(String shopId) throws AccessTokenManagerException {
     return Objects.nonNull(findAccessToken(shopId));
   }
 
@@ -156,12 +172,11 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
     }
 
     public void start(long delaySeconds) {
-      logger.info("Start access token update task with " + delaySeconds + " seconds:: shop "
-              + currentAccessToken.getShopName());
       try {
         executorService.schedule(this, delaySeconds, TimeUnit.SECONDS);
       } catch (RejectedExecutionException e) {
-        logger.warn("Could not start task, this access token manager closed:: shop " + currentAccessToken.getShopName());
+        // This cannot be happening
+        logger.warn("Could not schedule access token update task:: " + currentAccessToken.getShopName());
       }
     }
     public void start() {
@@ -177,21 +192,24 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
 
     @Override
     public void run() {
-      if (!hasShopAccessToken(currentAccessToken.getShopId())) {
-        return;
-      }
+      logger.info("Run access token update task:: " + currentAccessToken.getShopName());
       AccessToken remoteAccessToken;
       try {
+        if (!hasShopAccessToken(currentAccessToken.getShopId())) {
+          return;
+        }
         remoteAccessToken = getRemoteAccessToken(currentAccessToken);
       } catch (Exception e) {
-        // 网络请求失败或者由于远程服务器当前无法返回新的访问令牌，稍后再试
-        // 处理响应结果失败，不建议再试，基本不会发生这种情况
-        logger.warn("Could not get remote access token, try again 10 seconds later:: shop "
-                + currentAccessToken.getShopName(), e);
-        start(10);
+        if (e instanceof WebClientException) {
+          logger.warn("Could not get remote access token because web client exception, try again 10 seconds later:: "
+                  + currentAccessToken.getShopName(), e);
+          start(10);
+        } else {
+          logger.warn("Could not get remote access token, exit this access token update task:: "
+                  + currentAccessToken.getShopName(), e);
+        }
         return;
       }
-      // 如果此访问令牌管理器被关闭的情况，此方法不会开启新的任务
       startWithNewAccessToken(remoteAccessToken);
 
       try {
@@ -200,7 +218,7 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
         // 执行更新访问令牌的时候发生异常，需要重试吗？
         // 此时的异常可能是本地存储状态发生异常，往后肯定会修复正常，后续更新操作肯定会同步到本地存储
         // 建议访问令牌存储器对这类情况做相应的处理
-        logger.warn("Could not update access token to store:: shop " + currentAccessToken.getShopName(), e);
+        logger.warn("Could not update access token to store:: " + currentAccessToken.getShopName(), e);
       }
     }
   }
@@ -212,31 +230,31 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
    */
   private class AccessTokenStoreCacheWrapper implements AccessTokenStore {
 
-    private final AccessTokenStore internalStore = AccessTokenStoreImpl.create();
+    private final AccessTokenStore internalStore = new AccessTokenStoreImpl();
 
     private final AccessTokenStore originStore;
 
-    private AccessTokenStoreCacheWrapper(AccessTokenStore originStore) {
+    public AccessTokenStoreCacheWrapper(AccessTokenStore originStore) {
       this.originStore = originStore;
     }
 
     // 先保存到缓存中，再保存到原始存储器
     @Override
-    public boolean saveOrUpdate(AccessToken accessToken) {
+    public boolean saveOrUpdate(AccessToken accessToken) throws AccessTokenStoreException {
       internalStore.saveOrUpdate(accessToken);
       return originStore.saveOrUpdate(accessToken);
     }
 
     // 先删除缓存中的，再删除原始的
     @Override
-    public void deleteByShopId(String shopId) {
+    public void deleteByShopId(String shopId) throws AccessTokenStoreException {
       internalStore.deleteByShopId(shopId);
       originStore.deleteByShopId(shopId);
     }
 
     // 直接查询缓存中的，缓存中不存在再去查询原始的
     @Override
-    public AccessToken findByShopId(String shopId) {
+    public AccessToken findByShopId(String shopId) throws AccessTokenStoreException {
       AccessToken accessToken = internalStore.findByShopId(shopId);
       if (Objects.nonNull(accessToken)) {
         return accessToken;
@@ -250,7 +268,7 @@ public class AccessTokenManagerImpl implements AccessTokenManager {
 
     // 直接查询缓存中的，缓存中不存在再去查询原始的，没有考虑缓存和原始数据非空不同集合的情况
     @Override
-    public List<AccessToken> findAll() {
+    public List<AccessToken> findAll() throws AccessTokenStoreException {
       List<AccessToken> accessTokens = internalStore.findAll();
       if (!accessTokens.isEmpty()) {
         return accessTokens;

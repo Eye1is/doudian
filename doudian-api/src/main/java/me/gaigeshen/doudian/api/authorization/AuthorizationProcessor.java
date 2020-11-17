@@ -27,14 +27,16 @@ public interface AuthorizationProcessor {
    * @param authorizationCode 授权码
    * @param state 授权回调需要携带的数据
    * @return 处理授权码得到的访问令牌
+   * @throws AuthorizationProcessorException 处理授权码异常
    */
-  AccessToken handleAuthorized(String authorizationCode, String state);
+  AccessToken handleAuthorized(String authorizationCode, String state) throws AuthorizationProcessorException;
 
   /**
    * 处理授权后的授权码，忽略授权回调需要携带的数据
    *
    * @param authorizationCode 授权码
    * @return 处理授权码得到的访问令牌
+   * @throws AuthorizationProcessorException 处理授权码异常
    */
-  AccessToken handleAuthorized(String authorizationCode);
+  AccessToken handleAuthorized(String authorizationCode) throws AuthorizationProcessorException;
 }
